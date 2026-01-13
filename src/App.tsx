@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Plus, Minus, Package, Search, History, LogOut, User, Upload, Lock, Trash2 } from 'lucide-react';
+import { Plus, Minus, Package, Search, History, LogOut, User, Upload } from 'lucide-react';
 
 // --- ΡΥΘΜΙΣΕΙΣ SUPABASE ---
 // ΒΑΛΕ ΤΑ ΔΙΚΑ ΣΟΥ ΣΤΟΙΧΕΙΑ ΕΔΩ:
@@ -79,7 +79,7 @@ const InventoryApp = () => {
   const addProduct = async () => {
     if (!newProduct.name.trim()) return;
     
-    const { data, error } = await supabase.from('products').insert([{
+    const { error } = await supabase.from('products').insert([{
       name: newProduct.name,
       category: newProduct.category,
       quantity: Number(newProduct.quantity),
