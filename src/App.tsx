@@ -71,12 +71,10 @@ const InventoryApp = () => {
     if (mainErr) return alert("Error Update Admin Stock");
 
     // 2. Ενημέρωση Τεχνικού (Tech Stock)
-    // Ψάχνουμε αν έχει ήδη εγγραφή ο τεχνικός για αυτό το υλικό
     const techItem = techStock.find(t => t.tech_name === techName && t.product_name === productName);
     
     if (techItem) {
       // Υπάρχει -> Update
-      // Αν του ΔΙΝΩ: +change, Αν ΠΑΙΡΝΩ: -change
       const techNewQty = type === 'give' ? techItem.quantity + change : techItem.quantity - change;
       await supabase.from('tech_stock').update({ quantity: techNewQty }).eq('id', techItem.id);
     } else {
@@ -104,12 +102,10 @@ const InventoryApp = () => {
 
   // --- USER: ΚΑΤΑΝΑΛΩΣΗ (Επηρεάζει ΜΟΝΟ τον πίνακα tech_stock) ---
   const handleTechUsage = async (item: any) => {
-    // Μειώνουμε 1 από το βαν του
     await supabase.from('tech_stock')
       .update({ quantity: item.quantity - 1 })
       .eq('id', item.id);
 
-    // Καταγραφή
     await supabase.from('history').insert([{
       product: item.product_name,
       user_name: currentUser.username,
@@ -127,14 +123,14 @@ const InventoryApp = () => {
   };
 
   const saveEdit = async () => {
+    const old = products.find(p => p.id === editingProduct.id);
     await supabase.from('products').update({ name: editingProduct.name, quantity: editingProduct.quantity }).eq('id', editingProduct.id);
+    await supabase.from('history').insert([{ product: editingProduct.name, user: 'admin', type: 'edit', details: `Admin Edit: ${old.quantity}->${editingProduct.quantity}` }]);
     setEditingProduct(null); loadData();
   };
 
   const isAdmin = currentUser?.role === 'admin';
-  // Admin βλέπει όλα, Χρήστης βλέπει μόνο δικά του
   const filteredHistory = isAdmin ? history : history.filter(h => h.user_name === currentUser?.username);
-  // Τα υλικά που έχει ο τρέχων τεχνικός στο βαν του
   const myVanStock = techStock.filter(t => t.tech_name === currentUser?.username && t.quantity > 0);
 
   if (view === 'login') {
@@ -144,7 +140,6 @@ const InventoryApp = () => {
           <div className="bg-blue-600 p-4 rounded-full mb-4 inline-block"><Lock className="text-white" size={32} /></div>
           <h1 className="text-2xl font-black mb-6 text-gray-800">BFB SYSTEM</h1>
           <input type="password" placeholder="PIN" className="w-full p-4 bg-gray-100 rounded-2xl text-center text-3xl font-bold text-gray-900" maxLength={6} value={pin} onChange={(e) => { setPin(e.target.value); if (e.target.value.length === 6) handleLogin(e.target.value); }} />
-          <p className="mt-4 text-gray-400 text-xs">Admin: 123456 | Kostas: 000000</p>
         </div>
       </div>
     );
@@ -227,11 +222,12 @@ const InventoryApp = () => {
           </>
         )}
 
+        {/* --- HISTORY VIEW --- */}
         {view === 'history' && (
           <div className="space-y-3">
             {filteredHistory.map((h: any) => (
               <div key={h.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 text-gray-900">
-                <div className={`w-1.5 h-10 rounded-full ${h.type === 'remove' ? 'bg-red-400' : 'bg-green-400'}`} />
+                <div className={`w-1.5 h-10 rounded-full ${h.type === 'remove' ? 'bg-red-400' : h.type === 'add' ? 'bg-green-400' : 'bg-blue-400'}`} />
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-0.5">
                     <span className="font-bold truncate text-sm">{h.product}</span>
